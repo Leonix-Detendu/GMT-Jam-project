@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.Windows;
 
@@ -8,8 +9,9 @@ public class PlayerController : MonoBehaviour
     private Vector2 moveInput;
     [SerializeField] private float moveSpeed;
     [SerializeField] private float jumpForce;
-    [SerializeField] private float maxJumpForce;
-    private float initJumpForce;
+
+    [SerializeField] private float rotationSpeed;
+    [SerializeField] private float aimingRotationSpeed;
 
     private bool isGrounded;
     [SerializeField] private float groundCheckRadius;
@@ -20,20 +22,39 @@ public class PlayerController : MonoBehaviour
     private bool isLoadingTakeOff;
     [SerializeField] private float takeOffChargeRate;
     [SerializeField] private float loadingTakeOffDelay;
-    private bool isTakingOff;
-    [SerializeField] private float takingOffDuration;
     private float holdingTime = 0f;
+    private bool isFlying;
 
-    private GameObject camera;
+    [SerializeField] private float initFlightDuration;
+    private float flightDuration;
+    [SerializeField] private float flightDurationIncreaseRate;
+    [SerializeField] private float maxFlightDuration;
 
+    private Vector3 flightDirection;
+    private Vector3 initFlightDirection;
+    [Range(0f, 1f)]
+    [SerializeField] private float maxSteerAngleFactor;
+
+
+    [SerializeField] private float initFlightSpeed;
+    private float flightSpeed;
+    [SerializeField] private float maxFlightSpeed;
+    [SerializeField] private float airTurnSpeed;
+
+    private Camera mainCamera;
 
     private Rigidbody rb;
+
+    private BowController bowControllerScript;
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        initJumpForce = jumpForce;
         groundCheck = transform.Find("GroundCheck");
-        camera = GameObject.Find("Main Camera");
+        mainCamera = Camera.main ;
+        flightSpeed = initFlightSpeed;
+        flightDuration = initFlightDuration;
+
+        bowControllerScript = GetComponent<BowController>();
     }
 
     // Update is called once per frame
@@ -52,14 +73,16 @@ public class PlayerController : MonoBehaviour
         
         if (value.isPressed)
         {
-            startLoadingTakeOff = true;
+            if (isGrounded && !isFlying)
+            {
+                startLoadingTakeOff = true;
+            }
         }
         else
         {
-            if (isGrounded) JumpOrTakeOff();
+            if (startLoadingTakeOff && isGrounded) JumpOrTakeOff();
             startLoadingTakeOff = false;
             isLoadingTakeOff = false;
-            jumpForce = initJumpForce;
             holdingTime = 0f;
         }
 
@@ -75,15 +98,15 @@ public class PlayerController : MonoBehaviour
         {
             rb.linearVelocity = Vector3.zero;
         }
-        else if (isGrounded && !isTakingOff)
+
+        else if (!isFlying && !startLoadingTakeOff)
         {
-            Vector3 movement = moveDirection * moveSpeed;
-            rb.linearVelocity = new Vector3(movement.x, rb.linearVelocity.y, movement.z);
+            BasicMovements(moveDirection);
         }
-        else if (isTakingOff)
+
+        else if (isFlying)
         {
-            // ajouter les controles aériens pendant le décollage
-            Vector3 movement = new Vector3(moveDirection.x, moveDirection.z, 0);
+            FlyingMovements();
         }
         else
         {
@@ -100,10 +123,18 @@ public class PlayerController : MonoBehaviour
     {
         if (isLoadingTakeOff)
         {
-            Vector3 takeOffDirection = camera.transform.forward.normalized;
-            rb.AddForce( jumpForce * takeOffDirection, ForceMode.Impulse);
+            Vector3 camForward = mainCamera.transform.forward;
+
+            if (camForward.y < 0.25f)
+            {
+                camForward.y = 0.25f;
+            }
+
+            flightDirection = camForward.normalized;
+            initFlightDirection = flightDirection;
             StartCoroutine(TakingOffRoutine());
         }
+
         else
         {
             rb.AddForce(jumpForce * Vector3.up, ForceMode.Impulse);
@@ -117,27 +148,28 @@ public class PlayerController : MonoBehaviour
         if (holdingTime >= loadingTakeOffDelay)
         {
             isLoadingTakeOff = true;
-            jumpForce += takeOffChargeRate * Time.fixedDeltaTime;
-            if (jumpForce >= maxJumpForce)
-            {
-                jumpForce = maxJumpForce;
-            }
+            flightSpeed = Mathf.Min(flightSpeed + takeOffChargeRate * Time.fixedDeltaTime, maxFlightSpeed);
+            flightDuration = Mathf.Min(flightDuration + flightDurationIncreaseRate * Time.fixedDeltaTime, maxFlightDuration);
         }
     }
 
     IEnumerator TakingOffRoutine()
     {
-        isTakingOff = true;
+        isFlying = true;
+        rb.useGravity = false;
 
-        yield return new WaitForSeconds(takingOffDuration);
+        yield return new WaitForSeconds(flightDuration);
 
-        isTakingOff = false;
+        rb.useGravity = true ;
+        isFlying = false;
+        flightSpeed = initFlightSpeed;
+        flightDuration = initFlightDuration;
     }
 
     private Vector3 MoveDirectionCalculation()
     {
-        Vector3 camForward = camera.transform.forward;
-        Vector3 camRight = camera.transform.right;
+        Vector3 camForward = mainCamera.transform.forward;
+        Vector3 camRight = mainCamera.transform.right;
 
         camForward.y = 0f;
         camRight.y = 0f;
@@ -148,5 +180,58 @@ public class PlayerController : MonoBehaviour
         Vector3 moveDirection = ((camForward * moveInput.y) + (camRight * moveInput.x)).normalized;
 
         return moveDirection;
+    }
+
+    private void BasicMovements(Vector3 moveDirection)
+    {
+        Vector3 movement = moveDirection * moveSpeed;
+
+        Quaternion targetRotation;
+
+        Quaternion nextRotation;
+
+        if (isGrounded && !bowControllerScript.isAiming && moveDirection.sqrMagnitude > 0.01f)
+        {
+            targetRotation = Quaternion.LookRotation(moveDirection);
+
+            nextRotation = Quaternion.Slerp(rb.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime);
+
+            rb.MoveRotation(nextRotation);
+            
+        }
+
+        else if (isGrounded && bowControllerScript.isAiming)
+        {
+            Vector3 camForward = mainCamera.transform.forward;
+
+            camForward.y = 0;
+
+            camForward.Normalize();
+
+            if (camForward.sqrMagnitude > 0.001)
+            {
+                targetRotation = Quaternion.LookRotation(camForward);
+
+                nextRotation = Quaternion.Slerp(rb.rotation, targetRotation, aimingRotationSpeed * Time.fixedDeltaTime);
+
+                rb.MoveRotation(nextRotation);
+            }
+        }
+
+        rb.linearVelocity = new Vector3(movement.x, rb.linearVelocity.y, movement.z);
+    }
+
+    private void FlyingMovements()
+    {
+        if (moveInput.sqrMagnitude > 0.01f)
+        {
+            Vector3 inputDir = (mainCamera.transform.right * moveInput.x + mainCamera.transform.up * moveInput.y).normalized;
+
+            Vector3 targetDir = (initFlightDirection + inputDir * maxSteerAngleFactor).normalized;
+
+            flightDirection = Vector3.RotateTowards(flightDirection, targetDir, airTurnSpeed * Time.fixedDeltaTime, 0f);
+        }
+
+        rb.linearVelocity = flightSpeed * flightDirection;
     }
 }
