@@ -13,8 +13,6 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float jumpForce;
 
     [SerializeField] private float rotationSpeed;
-    [SerializeField] private float aimingRotationSpeed;
-    
 
     private bool isGrounded;
     [SerializeField] private float groundCheckRadius;

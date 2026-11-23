@@ -26,7 +26,11 @@ public class BowController : MonoBehaviour
     [SerializeField] private float minArrowSpeed = 25f;
     [SerializeField] private float maxArrowSpeed = 70f;
     [SerializeField] private float chargeRate = 30f;
+    [SerializeField] private float releaseArrowMinDelay;
+    private bool canReleaseArrow;
+    private bool shouldReleaseArrow;
     private bool isChargingBow;
+    private bool anArrowCanBeLoaded;
 
     private Camera mainCamera;
     private float currentArrowSpeed;
@@ -37,6 +41,7 @@ public class BowController : MonoBehaviour
     {
         mainCamera = Camera.main;
         currentArrowSpeed = minArrowSpeed;
+        anArrowCanBeLoaded = true;
     }
 
     private void Update()
@@ -64,6 +69,19 @@ public class BowController : MonoBehaviour
         }
     }
 
+    private void FixedUpdate()
+    {
+        if (canReleaseArrow && shouldReleaseArrow)
+        {
+            ShootArrow();
+            shouldReleaseArrow = false;
+            canReleaseArrow = false;
+            isChargingBow = false;
+            anArrowCanBeLoaded = true;
+            currentArrowSpeed = minArrowSpeed;
+        }
+    }
+
     public void OnFire(InputValue value)
     {
         if (value.isPressed)
@@ -73,19 +91,22 @@ public class BowController : MonoBehaviour
                 StopCoroutine(currentSwitchingCamRoutine);
             }
             aimCamera.Priority = 15;
-            isChargingBow = true;
+            if (anArrowCanBeLoaded)
+            {
+                anArrowCanBeLoaded = false;
+                StartCoroutine(canReleaseArrowRoutine());
+                isChargingBow = true;
+            }
             isAiming = true;
             currentArrowSpeed = minArrowSpeed;
         }
         else
         {
-            isChargingBow = false;
             currentSwitchingCamRoutine = StartCoroutine(SwitchingCamRoutine());
-            ShootArrow();
-            currentArrowSpeed = minArrowSpeed;
+            shouldReleaseArrow = true;
+            isChargingBow = false;
         }
     }
-
     public void OnLook(InputValue value)
     {
         lookInput = value.Get<Vector2>();
@@ -93,7 +114,6 @@ public class BowController : MonoBehaviour
 
     private void ShootArrow()
     {
-        // 1. Raycast depuis le centre exact de l'écran (le crosshair)
         Ray ray = mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
         Vector3 targetPoint;
 
@@ -109,14 +129,13 @@ public class BowController : MonoBehaviour
         Vector3 shootDirection = (targetPoint - arrowSpawnPoint.position).normalized;
 
         GameObject arrow = Instantiate(arrowPrefab, arrowSpawnPoint.position, Quaternion.LookRotation(shootDirection));
-        Rigidbody arrowRb = arrow.GetComponentInChildren<Rigidbody>();
+        Rigidbody arrowRb = arrow.GetComponent<Rigidbody>();
 
         if (arrowRb != null)
         {
             arrowRb.linearVelocity = shootDirection * currentArrowSpeed;
         }
 
-        // On détruit la flèche après 5 secondes si elle ne touche rien
         Destroy(arrow, 5f);
     }
 
@@ -127,5 +146,12 @@ public class BowController : MonoBehaviour
         aimCamera.Priority = 5;
 
         isAiming = false;
+    }
+
+    IEnumerator canReleaseArrowRoutine()
+    {
+        yield return new WaitForSeconds(releaseArrowMinDelay);
+
+        canReleaseArrow = true;
     }
 }
