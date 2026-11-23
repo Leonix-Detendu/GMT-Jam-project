@@ -753,7 +753,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 625c14eee3ad46c99df7c7c891ef668a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineThirdPersonFollow
-  Damping: {x: 0.1, y: 0.5, z: 0.3}
+  Damping: {x: 0.05, y: 0.1, z: 0.1}
   ShoulderOffset: {x: 0.8, y: -0.4, z: 0}
   VerticalArmLength: 1.2
   CameraSide: 1
@@ -1463,7 +1463,7 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_Constraints: 80
   m_CollisionDetection: 0
 --- !u!114 &1637844746
@@ -1478,6 +1478,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9b69252656223e418a829ab399a748b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
+  diagonalReleaseBuffer: 0
   moveSpeed: 20
   jumpForce: 10
   rotationSpeed: 15
@@ -1538,10 +1539,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BowController
   aimCamera: {fileID: 804391225}
+  cameraTarget: {fileID: 1538099023}
   maxAimDistance: 150
   aimLayerMask:
     serializedVersion: 2
     m_Bits: 64
+  aimSensitivity: 0.15
+  minPitch: -60
+  maxPitch: 70
+  pitchResetSpeed: 5
+  delayBeforeSwitchingCam: 1
+  horizontalTurnAmount: 0
   arrowPrefab: {fileID: 4506112301799838919, guid: e7f6271f0c9dacb41b7d923c5fe49957, type: 3}
   arrowSpawnPoint: {fileID: 1809541001}
   minArrowSpeed: 25

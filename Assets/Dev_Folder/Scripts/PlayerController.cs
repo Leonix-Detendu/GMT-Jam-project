@@ -1,17 +1,20 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
-using UnityEngine.Windows;
 
 public class PlayerController : MonoBehaviour
 {
     private Vector2 moveInput;
+    private bool isMovingDiagonaly;
+    private bool wasMovingDiagonaly;
+    [SerializeField] private float diagonalReleaseBuffer;
+    private float movingStraightDelay;
     [SerializeField] private float moveSpeed;
     [SerializeField] private float jumpForce;
 
     [SerializeField] private float rotationSpeed;
     [SerializeField] private float aimingRotationSpeed;
+    
 
     private bool isGrounded;
     [SerializeField] private float groundCheckRadius;
@@ -55,6 +58,7 @@ public class PlayerController : MonoBehaviour
         flightDuration = initFlightDuration;
 
         bowControllerScript = GetComponent<BowController>();
+        Cursor.lockState = CursorLockMode.Locked;
     }
 
     // Update is called once per frame
@@ -117,6 +121,17 @@ public class PlayerController : MonoBehaviour
         {
             LoadingTakeOff();
         }
+
+        isMovingDiagonaly = Mathf.Abs(moveInput.x) > 0.1 && Mathf.Abs(moveInput.y) > 0.1;
+
+        if (wasMovingDiagonaly && !isMovingDiagonaly)
+        {
+            movingStraightDelay = diagonalReleaseBuffer;
+        }
+
+        movingStraightDelay -= Time.fixedDeltaTime;
+
+        wasMovingDiagonaly = isMovingDiagonaly;
     }
 
     private void JumpOrTakeOff()
@@ -190,32 +205,23 @@ public class PlayerController : MonoBehaviour
 
         Quaternion nextRotation;
 
-        if (isGrounded && !bowControllerScript.isAiming && moveDirection.sqrMagnitude > 0.01f)
+        if (isGrounded && !bowControllerScript.isAiming && moveDirection.magnitude > 0.1f && movingStraightDelay <= 0f)
         {
             targetRotation = Quaternion.LookRotation(moveDirection);
 
             nextRotation = Quaternion.Slerp(rb.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime);
 
             rb.MoveRotation(nextRotation);
-            
+
         }
 
-        else if (isGrounded && bowControllerScript.isAiming)
+        else if ( bowControllerScript.isAiming )
         {
-            Vector3 camForward = mainCamera.transform.forward;
+            float yaw = bowControllerScript.horizontalTurnAmount;
 
-            camForward.y = 0;
+            bowControllerScript.horizontalTurnAmount = 0f;
 
-            camForward.Normalize();
-
-            if (camForward.sqrMagnitude > 0.001)
-            {
-                targetRotation = Quaternion.LookRotation(camForward);
-
-                nextRotation = Quaternion.Slerp(rb.rotation, targetRotation, aimingRotationSpeed * Time.fixedDeltaTime);
-
-                rb.MoveRotation(nextRotation);
-            }
+            rb.MoveRotation(rb.rotation * Quaternion.Euler(0f, yaw, 0f));
         }
 
         rb.linearVelocity = new Vector3(movement.x, rb.linearVelocity.y, movement.z);
