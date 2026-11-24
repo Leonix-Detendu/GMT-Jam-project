@@ -14,7 +14,9 @@ public class DirectionalArrow : MonoBehaviour
     {
         if (collision.gameObject.layer == LayerMask.NameToLayer("Arrow"))
         {
-            islandScript.shouldMove = true;
+            islandScript.previousPos = islandScript.currentPos;
+            islandScript.isBackable = true;
+            islandScript.isMoving = true;
             islandScript.direction = transform.up;
             Destroy(collision.gameObject);
         }

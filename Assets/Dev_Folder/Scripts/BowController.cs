@@ -23,13 +23,15 @@ public class BowController : MonoBehaviour
 
     [SerializeField] private GameObject arrowPrefab;
     [SerializeField] private Transform arrowSpawnPoint;
+
     [SerializeField] private float minArrowSpeed = 25f;
     [SerializeField] private float maxArrowSpeed = 70f;
     [SerializeField] private float chargeRate = 30f;
+
     [SerializeField] private float releaseArrowMinDelay;
     private bool canReleaseArrow;
     private bool shouldReleaseArrow;
-    private bool isChargingBow;
+    [HideInInspector] public bool isChargingBow;
     private bool anArrowCanBeLoaded;
 
     private Camera mainCamera;
@@ -37,11 +39,14 @@ public class BowController : MonoBehaviour
 
     [HideInInspector] public bool isAiming;
 
+    [SerializeField] private IslandController islandControllerScript;
+
     void Start()
     {
         mainCamera = Camera.main;
         currentArrowSpeed = minArrowSpeed;
         anArrowCanBeLoaded = true;
+        islandControllerScript = GetComponent<IslandController>();
     }
 
     private void Update()
@@ -53,11 +58,14 @@ public class BowController : MonoBehaviour
 
         if (isAiming)
         {
-            currentPitch -= lookInput.y * aimSensitivity;
-            currentPitch = Mathf.Clamp(currentPitch, minPitch, maxPitch);
-            cameraTarget.localRotation = Quaternion.Euler(currentPitch, 0f, 0f);
+            if (!islandControllerScript.isFocusingIsland)
+            {
+                currentPitch -= lookInput.y * aimSensitivity;
+                currentPitch = Mathf.Clamp(currentPitch, minPitch, maxPitch);
+                cameraTarget.localRotation = Quaternion.Euler(currentPitch, 0f, 0f);
 
-            horizontalTurnAmount += lookInput.x * aimSensitivity;
+                horizontalTurnAmount += lookInput.x * aimSensitivity;
+            }
         }
 
         else
@@ -86,19 +94,22 @@ public class BowController : MonoBehaviour
     {
         if (value.isPressed)
         {
-            if (currentSwitchingCamRoutine != null)
+            if (!islandControllerScript.isFocusingIsland)
             {
-                StopCoroutine(currentSwitchingCamRoutine);
+                if (currentSwitchingCamRoutine != null)
+                {
+                    StopCoroutine(currentSwitchingCamRoutine);
+                }
+                aimCamera.Priority = 15;
+                if (anArrowCanBeLoaded)
+                {
+                    anArrowCanBeLoaded = false;
+                    StartCoroutine(canReleaseArrowRoutine());
+                    isChargingBow = true;
+                }
+                isAiming = true;
+                currentArrowSpeed = minArrowSpeed;
             }
-            aimCamera.Priority = 15;
-            if (anArrowCanBeLoaded)
-            {
-                anArrowCanBeLoaded = false;
-                StartCoroutine(canReleaseArrowRoutine());
-                isChargingBow = true;
-            }
-            isAiming = true;
-            currentArrowSpeed = minArrowSpeed;
         }
         else
         {
@@ -142,6 +153,7 @@ public class BowController : MonoBehaviour
     IEnumerator SwitchingCamRoutine()
     {
         yield return new WaitForSeconds(delayBeforeSwitchingCam);
+        yield return new WaitWhile(() => islandControllerScript.isFocusingIsland);
 
         aimCamera.Priority = 5;
 

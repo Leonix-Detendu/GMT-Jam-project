@@ -14,7 +14,7 @@ public class PlayerController : MonoBehaviour
 
     [SerializeField] private float rotationSpeed;
 
-    private bool isGrounded;
+    [HideInInspector] public bool isGrounded;
     [SerializeField] private float groundCheckRadius;
     private Transform groundCheck;
     [SerializeField] private LayerMask groundLayer;
@@ -42,6 +42,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float maxFlightSpeed;
     [SerializeField] private float airTurnSpeed;
 
+    private IslandController islandControllerScript;
+
     private Camera mainCamera;
 
     private Rigidbody rb;
@@ -57,6 +59,7 @@ public class PlayerController : MonoBehaviour
 
         bowControllerScript = GetComponent<BowController>();
         Cursor.lockState = CursorLockMode.Locked;
+        islandControllerScript = GetComponent<IslandController>();
     }
 
     // Update is called once per frame
@@ -72,22 +75,23 @@ public class PlayerController : MonoBehaviour
 
     public void OnSpace(InputValue value)
     {
-        
-        if (value.isPressed)
+        if (!islandControllerScript.isFocusingIsland)
         {
-            if (isGrounded && !isFlying)
+            if(value.isPressed)
             {
-                startLoadingTakeOff = true;
+                if (isGrounded && !isFlying)
+                {
+                    startLoadingTakeOff = true;
+                }
+            }
+            else
+            {
+                if (startLoadingTakeOff && isGrounded) JumpOrTakeOff();
+                startLoadingTakeOff = false;
+                isLoadingTakeOff = false;
+                holdingTime = 0f;
             }
         }
-        else
-        {
-            if (startLoadingTakeOff && isGrounded) JumpOrTakeOff();
-            startLoadingTakeOff = false;
-            isLoadingTakeOff = false;
-            holdingTime = 0f;
-        }
-
     }
 
     private void FixedUpdate()
@@ -101,7 +105,7 @@ public class PlayerController : MonoBehaviour
             rb.linearVelocity = Vector3.zero;
         }
 
-        else if (!isFlying && !startLoadingTakeOff)
+        else if (!isFlying && !startLoadingTakeOff && !islandControllerScript.isFocusingIsland)
         {
             BasicMovements(moveDirection);
         }

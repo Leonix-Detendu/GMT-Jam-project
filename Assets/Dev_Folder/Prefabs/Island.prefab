@@ -492,7 +492,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 23
+  m_VersionIndex: 41
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -920,7 +920,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 2961
+  m_VersionIndex: 2979
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -965,6 +965,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5253156543032093000}
   - component: {fileID: 6483688292747536850}
+  - component: {fileID: 928252783948515152}
   m_Layer: 0
   m_Name: Island
   m_TagString: Untagged
@@ -1017,6 +1018,25 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &928252783948515152
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7463533706218394058}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9dbe0b5cbae9b7249a201828c8e7ef90, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IslandScript
+  isMoving: 0
+  sisterIsland: {fileID: 0}
+  goalIsland: {fileID: 0}
+  direction: {x: 0, y: 0, z: 0}
+  moveSpeed: 0
+  minRange: 0
+  maxRange: 0
 --- !u!1 &7650759278555085218
 GameObject:
   m_ObjectHideFlags: 0
@@ -1102,9 +1122,17 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2127460630056121510, guid: b6ebfbc5e8730ef40a70bf61150a0dfa, type: 3}
+      propertyPath: m_VersionIndex
+      value: 41
+      objectReference: {fileID: 0}
     - target: {fileID: 2189133498881026282, guid: b6ebfbc5e8730ef40a70bf61150a0dfa, type: 3}
       propertyPath: m_Name
       value: Directional Arrow Down
+      objectReference: {fileID: 0}
+    - target: {fileID: 3148075644853053454, guid: b6ebfbc5e8730ef40a70bf61150a0dfa, type: 3}
+      propertyPath: m_VersionIndex
+      value: 33
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1164,9 +1192,17 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2127460630056121510, guid: b6ebfbc5e8730ef40a70bf61150a0dfa, type: 3}
+      propertyPath: m_VersionIndex
+      value: 41
+      objectReference: {fileID: 0}
     - target: {fileID: 2189133498881026282, guid: b6ebfbc5e8730ef40a70bf61150a0dfa, type: 3}
       propertyPath: m_Name
       value: Directional Arrow Forward
+      objectReference: {fileID: 0}
+    - target: {fileID: 3148075644853053454, guid: b6ebfbc5e8730ef40a70bf61150a0dfa, type: 3}
+      propertyPath: m_VersionIndex
+      value: 33
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1226,9 +1262,17 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: -90
       objectReference: {fileID: 0}
+    - target: {fileID: 2127460630056121510, guid: b6ebfbc5e8730ef40a70bf61150a0dfa, type: 3}
+      propertyPath: m_VersionIndex
+      value: 41
+      objectReference: {fileID: 0}
     - target: {fileID: 2189133498881026282, guid: b6ebfbc5e8730ef40a70bf61150a0dfa, type: 3}
       propertyPath: m_Name
       value: Directional Arrow Right
+      objectReference: {fileID: 0}
+    - target: {fileID: 3148075644853053454, guid: b6ebfbc5e8730ef40a70bf61150a0dfa, type: 3}
+      propertyPath: m_VersionIndex
+      value: 33
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1288,9 +1332,17 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2127460630056121510, guid: b6ebfbc5e8730ef40a70bf61150a0dfa, type: 3}
+      propertyPath: m_VersionIndex
+      value: 41
+      objectReference: {fileID: 0}
     - target: {fileID: 2189133498881026282, guid: b6ebfbc5e8730ef40a70bf61150a0dfa, type: 3}
       propertyPath: m_Name
       value: Directional Arrow Backward
+      objectReference: {fileID: 0}
+    - target: {fileID: 3148075644853053454, guid: b6ebfbc5e8730ef40a70bf61150a0dfa, type: 3}
+      propertyPath: m_VersionIndex
+      value: 33
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1352,7 +1404,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2127460630056121510, guid: b6ebfbc5e8730ef40a70bf61150a0dfa, type: 3}
       propertyPath: m_VersionIndex
-      value: 38
+      value: 56
       objectReference: {fileID: 0}
     - target: {fileID: 2189133498881026282, guid: b6ebfbc5e8730ef40a70bf61150a0dfa, type: 3}
       propertyPath: m_Name
@@ -1360,7 +1412,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3148075644853053454, guid: b6ebfbc5e8730ef40a70bf61150a0dfa, type: 3}
       propertyPath: m_VersionIndex
-      value: 30
+      value: 48
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1420,9 +1472,17 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 90
       objectReference: {fileID: 0}
+    - target: {fileID: 2127460630056121510, guid: b6ebfbc5e8730ef40a70bf61150a0dfa, type: 3}
+      propertyPath: m_VersionIndex
+      value: 41
+      objectReference: {fileID: 0}
     - target: {fileID: 2189133498881026282, guid: b6ebfbc5e8730ef40a70bf61150a0dfa, type: 3}
       propertyPath: m_Name
       value: Directional Arrow Left
+      objectReference: {fileID: 0}
+    - target: {fileID: 3148075644853053454, guid: b6ebfbc5e8730ef40a70bf61150a0dfa, type: 3}
+      propertyPath: m_VersionIndex
+      value: 33
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
