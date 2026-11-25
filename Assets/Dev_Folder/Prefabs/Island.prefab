@@ -955,6 +955,37 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 0}
+--- !u!1 &6745096679616157456
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5644245907771309467}
+  m_Layer: 0
+  m_Name: Respawn Point
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5644245907771309467
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6745096679616157456}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 18, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5253156543032093000}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7463533706218394058
 GameObject:
   m_ObjectHideFlags: 0
@@ -986,6 +1017,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 5644245907771309467}
   - {fileID: 3730919632084914672}
   - {fileID: 7591509739332225829}
   - {fileID: 2107242740862306724}
@@ -1031,12 +1063,26 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IslandScript
   isMoving: 0
-  sisterIsland: {fileID: 0}
-  goalIsland: {fileID: 0}
+  shouldMoveBack: 0
+  flyingIslands: []
+  startingIsland: 0
+  sisterIslandScript: {fileID: 0}
+  isGoalIsland: 0
   direction: {x: 0, y: 0, z: 0}
+  currentPos: {x: 0, y: 0, z: 0}
+  previousPos: {x: 0, y: 0, z: 0}
+  targetPos: {x: 0, y: 0, z: 0}
+  baseMoveSpeed: 0
   moveSpeed: 0
   minRange: 0
   maxRange: 0
+  baseRange: 0
+  range: 0
+  rotateSpeed: 0
+  isControllable: 0
+  isBackable: 0
+  isRotatable: 0
+  rb: {fileID: 0}
 --- !u!1 &7650759278555085218
 GameObject:
   m_ObjectHideFlags: 0

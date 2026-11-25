@@ -7,24 +7,29 @@ public class IslandScript : MonoBehaviour
     [HideInInspector] public bool isMoving;
     [HideInInspector] public bool shouldMoveBack;
 
-    [SerializeField] private GameObject sisterIsland;
-    private IslandScript sisterIslandScript;
-    [SerializeField] private GameObject goalIsland;
-    private IslandScript goalIslandScript;
+    [SerializeField] private GameObject[] flyingIslands;
 
-    private bool isGoalIsland;
+    [SerializeField] private bool startingIsland;
 
-    [HideInInspector] public bool playerStandingHere;
+    [SerializeField] private IslandScript sisterIslandScript;
+
+    public bool isGoalIsland;
+
+    [HideInInspector] public bool lastIslandWherePWasStanding;
 
     [HideInInspector] public Vector3 direction;
 
     [HideInInspector] public Vector3 currentPos;
     [HideInInspector] public Vector3 previousPos;
-    private Vector3 targetPos;
+    [HideInInspector] public Vector3 targetPos;
 
-    [SerializeField] private float moveSpeed;
+    [SerializeField] private float baseMoveSpeed;
+    [HideInInspector] public float moveSpeed;
+
     [SerializeField] private float minRange;
     [SerializeField] private float maxRange;
+
+    [SerializeField] private float baseRange;
     [HideInInspector] public float range;
 
     [SerializeField] private float rotateSpeed;
@@ -33,7 +38,9 @@ public class IslandScript : MonoBehaviour
     [HideInInspector] public bool isBackable;
     [HideInInspector] public bool isRotatable;
 
-    private Rigidbody rb;
+    public GameObject respawnPoint;
+
+    [HideInInspector] public Rigidbody rb;
 
     private void Start()
     {
@@ -43,13 +50,9 @@ public class IslandScript : MonoBehaviour
         
         directionalArrows = directionalArrowsTransform.gameObject;
 
-        targetPos = rb.position;
+        moveSpeed = baseMoveSpeed;
 
-        currentPos = rb.position;
-
-        previousPos = rb.position; 
-
-        range = 50f;
+        range = baseRange;
 
         isControllable = true;
 
@@ -57,9 +60,40 @@ public class IslandScript : MonoBehaviour
 
         isBackable = false;
 
-        sisterIslandScript = sisterIsland.GetComponent<IslandScript>();
+        foreach(GameObject island in flyingIslands)
+        {
+            IslandScript islandScript = island.GetComponent<IslandScript>();
+            if (islandScript != null)
+            {
+                if (!islandScript.isGoalIsland && islandScript != this)
+                {
+                    sisterIslandScript = islandScript;
+                    break;
+                }
+            }
+        }
 
-        // goalIslandScript = goalIsland.GetComponent<IslandScript>();
+        for (int i = 0; i < flyingIslands.Length; i++)
+        {
+            if (flyingIslands[i] == gameObject)
+            {
+                rb.MovePosition(GameManager.instance.startingIslandsPos[i]);
+            }
+        }
+
+        if (isGoalIsland)
+        {
+            isControllable = false;
+            sisterIslandScript = null;
+            MakeDirArrowsDisappear();
+        }
+
+        if (startingIsland)
+        {
+            MakeDirArrowsDisappear();
+            isControllable = false;
+            lastIslandWherePWasStanding = true;
+        }
     }
 
     private void FixedUpdate()
@@ -75,6 +109,7 @@ public class IslandScript : MonoBehaviour
         {
             MovingToTargetPos();
         }
+
     }
 
     private void MovingToTargetPos()
@@ -94,6 +129,10 @@ public class IslandScript : MonoBehaviour
             }
             shouldMoveBack = false;
             isRotatable = true;
+
+            moveSpeed = baseMoveSpeed;
+            range = baseRange;
+            GameManager.instance.RecalculateDeathHeightThreshold();
         }
     }
 
@@ -108,14 +147,26 @@ public class IslandScript : MonoBehaviour
         if (collision.gameObject.CompareTag("Player"))
         {
             PlayerController playerControllerScript = collision.gameObject.GetComponent<PlayerController>();
-            
+
             if (playerControllerScript != null  && collision.GetContact(0).normal.y < -0.5f)
             {
+
+                if (isGoalIsland)
+                {
+                    NewGoalSetup();
+                }
+
+                lastIslandWherePWasStanding = true;
+                sisterIslandScript.lastIslandWherePWasStanding = false;
+
                 isControllable = false;
                 sisterIslandScript.isControllable = true;
 
                 MakeDirArrowsDisappear();
                 sisterIslandScript.MakeDirArrowsReappear();
+
+                currentPos = rb.position; 
+                previousPos = rb.position; 
             }
         }
     }
@@ -129,4 +180,42 @@ public class IslandScript : MonoBehaviour
     {
         directionalArrows.SetActive(false);
     }
+
+    private void NewGoalSetup()
+    {
+        IslandScript jumpedFrom = null;
+        IslandScript newGoal = null;
+
+        foreach (GameObject island in flyingIslands)
+        {
+            IslandScript script = island.GetComponent<IslandScript>();
+            if (script == this) continue;
+
+            if (script.lastIslandWherePWasStanding)
+                jumpedFrom = script;
+            else
+                newGoal = script;
+        }
+
+        isGoalIsland = false;
+        sisterIslandScript = jumpedFrom;
+
+        jumpedFrom.sisterIslandScript = this;
+
+        newGoal.isGoalIsland = true;
+        newGoal.isControllable = false;
+        newGoal.lastIslandWherePWasStanding = false;
+        newGoal.sisterIslandScript = null;
+        newGoal.MakeDirArrowsDisappear();
+
+        GameManager.instance.MoveNewGoalIslandToNextPos();
+    }
+
+    public void SyncInitialPosition(Vector3 startPos)
+    {
+        currentPos = startPos;
+        previousPos = startPos;
+        targetPos = startPos;
+    }
+
 }
