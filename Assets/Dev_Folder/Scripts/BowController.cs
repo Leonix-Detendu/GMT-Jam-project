@@ -23,20 +23,30 @@ public class BowController : MonoBehaviour
 
     [SerializeField] private GameObject arrowPrefab;
     [SerializeField] private Transform arrowSpawnPoint;
+
     [SerializeField] private float minArrowSpeed = 25f;
     [SerializeField] private float maxArrowSpeed = 70f;
     [SerializeField] private float chargeRate = 30f;
-    private bool isChargingBow;
+
+    [SerializeField] private float releaseArrowMinDelay;
+    private bool canReleaseArrow;
+    private bool shouldReleaseArrow;
+    [HideInInspector] public bool isChargingBow;
+    private bool anArrowCanBeLoaded;
 
     private Camera mainCamera;
     private float currentArrowSpeed;
 
     [HideInInspector] public bool isAiming;
 
+    [SerializeField] private IslandController islandControllerScript;
+
     void Start()
     {
         mainCamera = Camera.main;
         currentArrowSpeed = minArrowSpeed;
+        anArrowCanBeLoaded = true;
+        islandControllerScript = GetComponent<IslandController>();
     }
 
     private void Update()
@@ -48,11 +58,14 @@ public class BowController : MonoBehaviour
 
         if (isAiming)
         {
-            currentPitch -= lookInput.y * aimSensitivity;
-            currentPitch = Mathf.Clamp(currentPitch, minPitch, maxPitch);
-            cameraTarget.localRotation = Quaternion.Euler(currentPitch, 0f, 0f);
+            if (!islandControllerScript.isFocusingIsland)
+            {
+                currentPitch -= lookInput.y * aimSensitivity;
+                currentPitch = Mathf.Clamp(currentPitch, minPitch, maxPitch);
+                cameraTarget.localRotation = Quaternion.Euler(currentPitch, 0f, 0f);
 
-            horizontalTurnAmount += lookInput.x * aimSensitivity;
+                horizontalTurnAmount += lookInput.x * aimSensitivity;
+            }
         }
 
         else
@@ -64,28 +77,47 @@ public class BowController : MonoBehaviour
         }
     }
 
-    public void OnFire(InputValue value)
+    private void FixedUpdate()
     {
-        if (value.isPressed)
+        if (canReleaseArrow && shouldReleaseArrow)
         {
-            if (currentSwitchingCamRoutine != null)
-            {
-                StopCoroutine(currentSwitchingCamRoutine);
-            }
-            aimCamera.Priority = 15;
-            isChargingBow = true;
-            isAiming = true;
-            currentArrowSpeed = minArrowSpeed;
-        }
-        else
-        {
-            isChargingBow = false;
-            currentSwitchingCamRoutine = StartCoroutine(SwitchingCamRoutine());
             ShootArrow();
+            shouldReleaseArrow = false;
+            canReleaseArrow = false;
+            isChargingBow = false;
+            anArrowCanBeLoaded = true;
             currentArrowSpeed = minArrowSpeed;
         }
     }
 
+    public void OnFire(InputValue value)
+    {
+        if (value.isPressed)
+        {
+            if (!islandControllerScript.isFocusingIsland)
+            {
+                if (currentSwitchingCamRoutine != null)
+                {
+                    StopCoroutine(currentSwitchingCamRoutine);
+                }
+                aimCamera.Priority = 15;
+                if (anArrowCanBeLoaded)
+                {
+                    anArrowCanBeLoaded = false;
+                    StartCoroutine(canReleaseArrowRoutine());
+                    isChargingBow = true;
+                }
+                isAiming = true;
+                currentArrowSpeed = minArrowSpeed;
+            }
+        }
+        else
+        {
+            currentSwitchingCamRoutine = StartCoroutine(SwitchingCamRoutine());
+            shouldReleaseArrow = true;
+            isChargingBow = false;
+        }
+    }
     public void OnLook(InputValue value)
     {
         lookInput = value.Get<Vector2>();
@@ -93,7 +125,6 @@ public class BowController : MonoBehaviour
 
     private void ShootArrow()
     {
-        // 1. Raycast depuis le centre exact de l'écran (le crosshair)
         Ray ray = mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
         Vector3 targetPoint;
 
@@ -109,23 +140,30 @@ public class BowController : MonoBehaviour
         Vector3 shootDirection = (targetPoint - arrowSpawnPoint.position).normalized;
 
         GameObject arrow = Instantiate(arrowPrefab, arrowSpawnPoint.position, Quaternion.LookRotation(shootDirection));
-        Rigidbody arrowRb = arrow.GetComponentInChildren<Rigidbody>();
+        Rigidbody arrowRb = arrow.GetComponent<Rigidbody>();
 
         if (arrowRb != null)
         {
             arrowRb.linearVelocity = shootDirection * currentArrowSpeed;
         }
 
-        // On détruit la flèche après 5 secondes si elle ne touche rien
         Destroy(arrow, 5f);
     }
 
     IEnumerator SwitchingCamRoutine()
     {
         yield return new WaitForSeconds(delayBeforeSwitchingCam);
+        yield return new WaitWhile(() => islandControllerScript.isFocusingIsland);
 
         aimCamera.Priority = 5;
 
         isAiming = false;
+    }
+
+    IEnumerator canReleaseArrowRoutine()
+    {
+        yield return new WaitForSeconds(releaseArrowMinDelay);
+
+        canReleaseArrow = true;
     }
 }
