@@ -57,6 +57,8 @@ public class PlayerController : MonoBehaviour
         flightSpeed = initFlightSpeed;
         flightDuration = initFlightDuration;
 
+        rb.MovePosition(GameManager.instance.startingPlayerPos);
+
         bowControllerScript = GetComponent<BowController>();
         Cursor.lockState = CursorLockMode.Locked;
         islandControllerScript = GetComponent<IslandController>();
@@ -134,6 +136,11 @@ public class PlayerController : MonoBehaviour
         movingStraightDelay -= Time.fixedDeltaTime;
 
         wasMovingDiagonaly = isMovingDiagonaly;
+
+        if (rb.position.y <= GameManager.instance.deathHeightThreshold)
+        {
+            GameManager.instance.Respawn(gameObject);
+        }
     }
 
     private void JumpOrTakeOff()
