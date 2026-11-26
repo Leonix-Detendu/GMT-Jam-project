@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class GameManager : MonoBehaviour
 {
@@ -20,6 +21,8 @@ public class GameManager : MonoBehaviour
 
     [HideInInspector] public float deathHeightThreshold;
     [SerializeField] private float deathThresholdOffset;
+
+    private bool gameIsPaused;
 
     private void Awake()
     {
@@ -111,6 +114,23 @@ public class GameManager : MonoBehaviour
             }
         }
 
+    }
+
+    public void OnPause(InputValue value)
+    {
+        if (value.isPressed)
+        {
+            if (!gameIsPaused)
+            {
+                gameIsPaused = true;
+                Time.timeScale = 0f;
+            }
+            else
+            {
+                gameIsPaused = false;
+                Time.timeScale = 1f;
+            }
+        }
     }
 
 }
