@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Unity.Cinemachine;
 
 public class PlayerController : MonoBehaviour
 {
@@ -48,7 +49,10 @@ public class PlayerController : MonoBehaviour
 
     private Rigidbody rb;
 
-    private BowController bowControllerScript;
+    private BowAndAimController aimControllerScript;
+
+    private Vector3 baseOrientation = Vector3.forward;
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -59,15 +63,9 @@ public class PlayerController : MonoBehaviour
 
         rb.MovePosition(GameManager.instance.startingPlayerPos);
 
-        bowControllerScript = GetComponent<BowController>();
+        aimControllerScript = GetComponent<BowAndAimController>();
         Cursor.lockState = CursorLockMode.Locked;
         islandControllerScript = GetComponent<IslandController>();
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
     }
 
     public void OnMove(InputValue value)
@@ -105,6 +103,8 @@ public class PlayerController : MonoBehaviour
         if (isLoadingTakeOff)
         {
             rb.linearVelocity = Vector3.zero;
+
+            aimControllerScript.Aiming();
         }
 
         else if (!isFlying && !startLoadingTakeOff && !islandControllerScript.isFocusingIsland)
@@ -126,16 +126,7 @@ public class PlayerController : MonoBehaviour
             LoadingTakeOff();
         }
 
-        isMovingDiagonaly = Mathf.Abs(moveInput.x) > 0.1 && Mathf.Abs(moveInput.y) > 0.1;
-
-        if (wasMovingDiagonaly && !isMovingDiagonaly)
-        {
-            movingStraightDelay = diagonalReleaseBuffer;
-        }
-
-        movingStraightDelay -= Time.fixedDeltaTime;
-
-        wasMovingDiagonaly = isMovingDiagonaly;
+        MovingDiagonaly();
 
         if (rb.position.y <= GameManager.instance.deathHeightThreshold)
         {
@@ -156,7 +147,7 @@ public class PlayerController : MonoBehaviour
 
             flightDirection = camForward.normalized;
             initFlightDirection = flightDirection;
-            StartCoroutine(TakingOffRoutine());
+            StartCoroutine(FlyingRoutine());
         }
 
         else
@@ -177,17 +168,53 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    IEnumerator TakingOffRoutine()
+    IEnumerator FlyingRoutine()
     {
         isFlying = true;
         rb.useGravity = false;
 
-        yield return new WaitForSeconds(flightDuration);
+        aimControllerScript.currentSwitchingCamRoutine = StartCoroutine(aimControllerScript.SwitchingCamRoutine(true));
 
-        rb.useGravity = true ;
+        aimControllerScript.flyingCamera.Priority = 15;
+
+        Quaternion startRot = Quaternion.LookRotation(flightDirection) * Quaternion.Euler(90f, 0f, 0f);
+        rb.MoveRotation(startRot);
+
+        float elapsedTime = 0f;
+
+        while (elapsedTime < flightDuration)
+        {
+            elapsedTime += Time.deltaTime;
+
+            if (elapsedTime > 0.2f && isGrounded)
+            {
+                break;
+            }
+
+            yield return null;
+        }
+
+        Vector3 flatLandingDir = new Vector3(flightDirection.x, 0f, flightDirection.z);
+
+        if (flatLandingDir.sqrMagnitude < 0.001f)
+        {
+            flatLandingDir = Vector3.ProjectOnPlane(transform.up, Vector3.up);
+        }
+
+        flatLandingDir.Normalize();
+
+        Quaternion landingRot = Quaternion.LookRotation(flatLandingDir);
+        rb.MoveRotation(landingRot);
+
+        CinemachineOrbitalFollow orbitCam = aimControllerScript.standartCamera.GetComponent<CinemachineOrbitalFollow>();
+        orbitCam.HorizontalAxis.Value = landingRot.eulerAngles.y;
+        aimControllerScript.standartCamera.PreviousStateIsValid = false;
+
+        rb.useGravity = true;
         isFlying = false;
         flightSpeed = initFlightSpeed;
         flightDuration = initFlightDuration;
+        aimControllerScript.flyingCamera.Priority = 5;
     }
 
     private Vector3 MoveDirectionCalculation()
@@ -214,7 +241,7 @@ public class PlayerController : MonoBehaviour
 
         Quaternion nextRotation;
 
-        if (isGrounded && !bowControllerScript.isAiming && moveDirection.magnitude > 0.1f && movingStraightDelay <= 0f)
+        if (isGrounded && !aimControllerScript.isAiming && moveDirection.magnitude > 0.1f && movingStraightDelay <= 0f)
         {
             targetRotation = Quaternion.LookRotation(moveDirection);
 
@@ -224,11 +251,11 @@ public class PlayerController : MonoBehaviour
 
         }
 
-        else if ( bowControllerScript.isAiming )
+        else if ( aimControllerScript.isAiming )
         {
-            float yaw = bowControllerScript.horizontalTurnAmount;
+            float yaw = aimControllerScript.horizontalTurnAmount;
 
-            bowControllerScript.horizontalTurnAmount = 0f;
+            aimControllerScript.horizontalTurnAmount = 0f;
 
             rb.MoveRotation(rb.rotation * Quaternion.Euler(0f, yaw, 0f));
         }
@@ -241,12 +268,31 @@ public class PlayerController : MonoBehaviour
         if (moveInput.sqrMagnitude > 0.01f)
         {
             Vector3 inputDir = (mainCamera.transform.right * moveInput.x + mainCamera.transform.up * moveInput.y).normalized;
-
             Vector3 targetDir = (initFlightDirection + inputDir * maxSteerAngleFactor).normalized;
-
             flightDirection = Vector3.RotateTowards(flightDirection, targetDir, airTurnSpeed * Time.fixedDeltaTime, 0f);
         }
 
+        if (flightDirection.sqrMagnitude > 0.001f)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(flightDirection) * Quaternion.Euler(90f, 0f, 0f);
+            Quaternion nextRotation = Quaternion.Slerp(rb.rotation, targetRotation, airTurnSpeed * Time.fixedDeltaTime);
+            rb.MoveRotation(nextRotation);
+        }
+
         rb.linearVelocity = flightSpeed * flightDirection;
+    }
+
+    private void MovingDiagonaly()
+    {
+        isMovingDiagonaly = Mathf.Abs(moveInput.x) > 0.1 && Mathf.Abs(moveInput.y) > 0.1;
+
+        if (wasMovingDiagonaly && !isMovingDiagonaly)
+        {
+            movingStraightDelay = diagonalReleaseBuffer;
+        }
+
+        movingStraightDelay -= Time.fixedDeltaTime;
+
+        wasMovingDiagonaly = isMovingDiagonaly;
     }
 }

@@ -587,7 +587,7 @@ MeshCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 261683847157067405}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 95b97b0598eefe34da731c0ed5651903, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -940,7 +940,7 @@ MeshCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 917220321163022323}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 95b97b0598eefe34da731c0ed5651903, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -1068,6 +1068,7 @@ MonoBehaviour:
   startingIsland: 0
   sisterIslandScript: {fileID: 0}
   isGoalIsland: 0
+  lastIslandWherePWasStanding: 0
   direction: {x: 0, y: 0, z: 0}
   currentPos: {x: 0, y: 0, z: 0}
   previousPos: {x: 0, y: 0, z: 0}
@@ -1082,6 +1083,7 @@ MonoBehaviour:
   isControllable: 0
   isBackable: 0
   isRotatable: 0
+  respawnPoint: {fileID: 0}
   rb: {fileID: 0}
 --- !u!1 &7650759278555085218
 GameObject:

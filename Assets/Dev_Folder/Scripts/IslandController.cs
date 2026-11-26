@@ -15,12 +15,12 @@ public class IslandController : MonoBehaviour
 
     private float rotateInput;
 
-    private BowController bowControllerScript;
+    private BowAndAimController bowControllerScript;
 
     private void Start()
     {
         mainCamera = Camera.main;
-        bowControllerScript = GetComponent<BowController>();
+        bowControllerScript = GetComponent<BowAndAimController>();
     }
 
     public void OnFocusIsland(InputValue value)
