@@ -2,15 +2,22 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Unity.Cinemachine;
+using System.Runtime.CompilerServices;
 
 public class PlayerController : MonoBehaviour
 {
+    [SerializeField] private float gravity;
+
     private Vector2 moveInput;
     private bool isMovingDiagonaly;
     private bool wasMovingDiagonaly;
     [SerializeField] private float diagonalReleaseBuffer;
     private float movingStraightDelay;
-    [SerializeField] private float moveSpeed;
+
+    private float moveSpeed;
+    [SerializeField] private float basicMoveSpeed;
+    [SerializeField] private float airMoveSpeed;
+
     [SerializeField] private float jumpForce;
 
     [SerializeField] private float rotationSpeed;
@@ -43,6 +50,10 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float maxFlightSpeed;
     [SerializeField] private float airTurnSpeed;
 
+    private bool isGliding;
+    [SerializeField] private float glidingMoveSpeed;
+    [SerializeField] private float glidingFallSpeed;
+
     private IslandController islandControllerScript;
 
     private Camera mainCamera;
@@ -51,10 +62,10 @@ public class PlayerController : MonoBehaviour
 
     private BowAndAimController aimControllerScript;
 
-    private Vector3 baseOrientation = Vector3.forward;
-
     void Start()
     {
+        moveSpeed = basicMoveSpeed;
+
         rb = GetComponent<Rigidbody>();
         groundCheck = transform.Find("GroundCheck");
         mainCamera = Camera.main ;
@@ -94,6 +105,20 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    public void OnGlide(InputValue value)
+    {
+
+        if (value.isPressed && !isGrounded)
+        {
+            isGliding = true;
+        }
+        else
+        {
+            isGliding = false;
+        }
+
+    }
+
     private void FixedUpdate()
     {
         isGrounded = Physics.CheckSphere(groundCheck.position, groundCheckRadius, groundLayer);
@@ -103,22 +128,36 @@ public class PlayerController : MonoBehaviour
         if (isLoadingTakeOff)
         {
             rb.linearVelocity = Vector3.zero;
-
             aimControllerScript.Aiming();
-        }
-
-        else if (!isFlying && !startLoadingTakeOff && !islandControllerScript.isFocusingIsland)
-        {
-            BasicMovements(moveDirection);
         }
 
         else if (isFlying)
         {
             FlyingMovements();
         }
-        else
+
+        else if (!startLoadingTakeOff && !islandControllerScript.isFocusingIsland)
         {
-            // ajouter les controles pendant la chute, le planage 
+            if (!isGrounded)
+            {
+                if (isGliding)
+                {
+                    Gliding(moveDirection);
+                }
+                else
+                {
+                    UprightRotation();
+                    moveSpeed = airMoveSpeed;
+                }
+            }
+
+            else if (isGliding)
+            {
+                isGliding = false;
+                UprightRotation();
+            }
+
+            BasicMovements(moveDirection);
         }
 
         if (startLoadingTakeOff && isGrounded)
@@ -132,6 +171,11 @@ public class PlayerController : MonoBehaviour
         {
             GameManager.instance.Respawn(gameObject);
         }
+
+
+        moveSpeed = basicMoveSpeed;
+
+        rb.AddForce(gravity * Vector3.down, ForceMode.Acceleration);
     }
 
     private void JumpOrTakeOff()
@@ -294,5 +338,35 @@ public class PlayerController : MonoBehaviour
         movingStraightDelay -= Time.fixedDeltaTime;
 
         wasMovingDiagonaly = isMovingDiagonaly;
+    }
+
+    private void Gliding(Vector3 moveDirection)
+    {
+        moveSpeed = glidingMoveSpeed;
+
+        Vector3 currentForward = Vector3.ProjectOnPlane(transform.forward + transform.up, Vector3.up).normalized;
+        Vector3 targetDir = moveDirection.sqrMagnitude > 0.01f ? moveDirection : currentForward;
+
+        if (targetDir.sqrMagnitude > 0.001f)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(targetDir) * Quaternion.Euler(90f, 0f, 0f);
+            rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime));
+        }
+
+        if (rb.linearVelocity.y < -glidingFallSpeed)
+        {
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, -glidingFallSpeed, rb.linearVelocity.z);
+        }
+    }
+
+    private void UprightRotation()
+    {
+        Vector3 flatForward = Vector3.ProjectOnPlane(transform.forward + transform.up, Vector3.up).normalized;
+
+        if (flatForward.sqrMagnitude > 0.001f)
+        {
+            Quaternion uprightRot = Quaternion.LookRotation(flatForward);
+            rb.MoveRotation(Quaternion.Slerp(rb.rotation, uprightRot, rotationSpeed * Time.fixedDeltaTime));
+        }
     }
 }

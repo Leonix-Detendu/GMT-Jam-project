@@ -8366,6 +8366,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2556942918441552066, guid: 25602518bd7a02448a54258efb01fd51, type: 3}
+      propertyPath: m_UseGravity
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2556942918441552066, guid: 25602518bd7a02448a54258efb01fd51, type: 3}
       propertyPath: m_Constraints
       value: 112
       objectReference: {fileID: 0}
@@ -8378,13 +8382,45 @@ PrefabInstance:
       value: Character
       objectReference: {fileID: 0}
     - target: {fileID: 4543016234561059017, guid: 25602518bd7a02448a54258efb01fd51, type: 3}
+      propertyPath: gravity
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 4543016234561059017, guid: 25602518bd7a02448a54258efb01fd51, type: 3}
+      propertyPath: airMoveSpeed
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 4543016234561059017, guid: 25602518bd7a02448a54258efb01fd51, type: 3}
       propertyPath: airTurnSpeed
       value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 4543016234561059017, guid: 25602518bd7a02448a54258efb01fd51, type: 3}
+      propertyPath: basicGravity
+      value: 9.81
       objectReference: {fileID: 0}
     - target: {fileID: 4543016234561059017, guid: 25602518bd7a02448a54258efb01fd51, type: 3}
       propertyPath: takeOffCamera
       value: 
       objectReference: {fileID: 510091019}
+    - target: {fileID: 4543016234561059017, guid: 25602518bd7a02448a54258efb01fd51, type: 3}
+      propertyPath: basicMoveSpeed
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 4543016234561059017, guid: 25602518bd7a02448a54258efb01fd51, type: 3}
+      propertyPath: glidingGravity
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4543016234561059017, guid: 25602518bd7a02448a54258efb01fd51, type: 3}
+      propertyPath: glidingFallSpeed
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4543016234561059017, guid: 25602518bd7a02448a54258efb01fd51, type: 3}
+      propertyPath: glidingMoveSpeed
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4543016234561059017, guid: 25602518bd7a02448a54258efb01fd51, type: 3}
+      propertyPath: loadingTakeOffDelay
+      value: 0.2
+      objectReference: {fileID: 0}
     - target: {fileID: 4543016234561059017, guid: 25602518bd7a02448a54258efb01fd51, type: 3}
       propertyPath: diagonalReleaseBuffer
       value: 0.1
