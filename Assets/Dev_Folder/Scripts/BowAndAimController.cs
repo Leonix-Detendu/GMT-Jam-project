@@ -46,7 +46,8 @@ public class BowAndAimController : MonoBehaviour
 
     [HideInInspector] public bool isAiming;
 
-    [SerializeField] private IslandController islandControllerScript;
+    private IslandController islandControllerScript;
+    private PlayerController playerControllerScript;
 
 
     void Start()
@@ -56,6 +57,7 @@ public class BowAndAimController : MonoBehaviour
         currentArrowSpeed = minArrowSpeed;
         anArrowCanBeLoaded = true;
         islandControllerScript = GetComponent<IslandController>();
+        playerControllerScript = GetComponent<PlayerController>();
     }
 
     private void Update()
@@ -71,8 +73,16 @@ public class BowAndAimController : MonoBehaviour
             {
                 currentPitch -= lookInput.y * aimSensitivity;
                 currentPitch = Mathf.Clamp(currentPitch, minPitch, maxPitch);
-                aimCameraTarget.localRotation = Quaternion.Euler(currentPitch, 0f, 0f);
-
+                
+                if (playerControllerScript.isGliding)
+                {
+                    aimCameraTarget.localRotation = Quaternion.Euler(currentPitch - 90f, 0f, 0f);
+                }
+                else
+                {
+                    aimCameraTarget.localRotation = Quaternion.Euler(currentPitch, 0f, 0f);
+                }
+                   
                 horizontalTurnAmount += lookInput.x * aimSensitivity;
             }
         }
@@ -101,7 +111,8 @@ public class BowAndAimController : MonoBehaviour
 
     public void OnFire(InputValue value)
     {
-        if (value.isPressed)
+
+        if (value.isPressed && !playerControllerScript.isFlying && !playerControllerScript.isLoadingTakeOff)
         {
             if (!islandControllerScript.isFocusingIsland)
             {
@@ -119,7 +130,7 @@ public class BowAndAimController : MonoBehaviour
             }
         }
 
-        else
+        else if (isAiming || isChargingBow)
         {
             currentSwitchingCamRoutine = StartCoroutine(SwitchingCamRoutine(false));
             shouldReleaseArrow = true;
@@ -161,8 +172,13 @@ public class BowAndAimController : MonoBehaviour
         yield return new WaitForSeconds(delayBeforeSwitchingCam);
         yield return new WaitWhile(() => islandControllerScript.isFocusingIsland);
 
-        orbitStandartCamera.HorizontalAxis.Value = gameObject.transform.eulerAngles.y;
-        
+
+        Vector3 flatForward = Vector3.ProjectOnPlane(transform.forward + transform.up, Vector3.up);
+        if (flatForward.sqrMagnitude > 0.001f)
+        {
+            orbitStandartCamera.HorizontalAxis.Value = Quaternion.LookRotation(flatForward).eulerAngles.y;
+        }
+
         float ratio;
         float relativePitch;
 
@@ -245,15 +261,25 @@ public class BowAndAimController : MonoBehaviour
                 }
 
                 Quaternion targetYaw = Quaternion.LookRotation(flatPlayerToTarget) * Quaternion.Euler(0f, parallaxAngle, 0f);
+
                 Rigidbody playerRb = GetComponent<Rigidbody>();
-                playerRb.MoveRotation(targetYaw);
-                transform.rotation = targetYaw;
+
+                Quaternion nextPlayerRotation = targetYaw;
+
+                if (playerControllerScript != null && playerControllerScript.isGliding)
+                {
+                    nextPlayerRotation *= Quaternion.Euler(90f, 0f, 0f);
+                }
+
+                playerRb.MoveRotation(nextPlayerRotation);
+
             }
 
             Vector3 camToTarget = (targetPoint - aimCameraTarget.position).normalized;
             float targetPitch = -Mathf.Asin(Mathf.Clamp(camToTarget.y, -1f, 1f)) * Mathf.Rad2Deg;
             currentPitch = Mathf.Clamp(targetPitch, minPitch, maxPitch);
-            aimCameraTarget.localRotation = Quaternion.Euler(currentPitch, 0f, 0f);
+
+            aimCameraTarget.localRotation = Quaternion.Euler(playerControllerScript.isGliding ? currentPitch - 90f : currentPitch, 0f, 0f);
         }
 
         aimCamera.Priority = 15;

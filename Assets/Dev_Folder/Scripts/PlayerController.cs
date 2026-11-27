@@ -28,11 +28,11 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private LayerMask groundLayer;
 
     private bool startLoadingTakeOff;
-    private bool isLoadingTakeOff;
+    [HideInInspector] public bool isLoadingTakeOff;
     [SerializeField] private float takeOffChargeRate;
     [SerializeField] private float loadingTakeOffDelay;
     private float holdingTime = 0f;
-    private bool isFlying;
+    [HideInInspector] public bool isFlying;
 
     [SerializeField] private float initFlightDuration;
     private float flightDuration;
@@ -50,7 +50,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float maxFlightSpeed;
     [SerializeField] private float airTurnSpeed;
 
-    private bool isGliding;
+    [HideInInspector] public bool isGliding;
     [SerializeField] private float glidingMoveSpeed;
     [SerializeField] private float glidingFallSpeed;
 
@@ -64,9 +64,13 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
+        
+
         moveSpeed = basicMoveSpeed;
 
         rb = GetComponent<Rigidbody>();
+        rb.useGravity = false;
+
         groundCheck = transform.Find("GroundCheck");
         mainCamera = Camera.main ;
         flightSpeed = initFlightSpeed;
@@ -215,7 +219,6 @@ public class PlayerController : MonoBehaviour
     IEnumerator FlyingRoutine()
     {
         isFlying = true;
-        rb.useGravity = false;
 
         aimControllerScript.currentSwitchingCamRoutine = StartCoroutine(aimControllerScript.SwitchingCamRoutine(true));
 
@@ -254,7 +257,6 @@ public class PlayerController : MonoBehaviour
         orbitCam.HorizontalAxis.Value = landingRot.eulerAngles.y;
         aimControllerScript.standartCamera.PreviousStateIsValid = false;
 
-        rb.useGravity = true;
         isFlying = false;
         flightSpeed = initFlightSpeed;
         flightDuration = initFlightDuration;
@@ -295,7 +297,7 @@ public class PlayerController : MonoBehaviour
 
         }
 
-        else if ( aimControllerScript.isAiming )
+        else if ( aimControllerScript.isAiming && !isGliding )
         {
             float yaw = aimControllerScript.horizontalTurnAmount;
 
@@ -344,13 +346,34 @@ public class PlayerController : MonoBehaviour
     {
         moveSpeed = glidingMoveSpeed;
 
-        Vector3 currentForward = Vector3.ProjectOnPlane(transform.forward + transform.up, Vector3.up).normalized;
-        Vector3 targetDir = moveDirection.sqrMagnitude > 0.01f ? moveDirection : currentForward;
+        Vector3 camForward = mainCamera.transform.forward;
+
+        camForward.y = 0f;
+
+        Vector3 targetDir = camForward.normalized;
 
         if (targetDir.sqrMagnitude > 0.001f)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(targetDir) * Quaternion.Euler(90f, 0f, 0f);
-            rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime));
+            Quaternion targetRotation;
+
+            if (aimControllerScript.isAiming)
+            {
+                float yaw = aimControllerScript.horizontalTurnAmount;
+
+                aimControllerScript.horizontalTurnAmount = 0f;
+
+                targetRotation = Quaternion.Euler(0f, yaw, 0f) * rb.rotation;
+
+                rb.MoveRotation(targetRotation);
+            }
+
+            else
+            {
+                targetRotation = Quaternion.LookRotation(targetDir) * Quaternion.Euler(90f, 0f, 0f);
+
+                rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime));
+            }
+                
         }
 
         if (rb.linearVelocity.y < -glidingFallSpeed)
